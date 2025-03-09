@@ -3,39 +3,107 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 )
 
-func main() {
-	// Komut satırı argümanlarını al
-	args := os.Args
+const fileName = "tasks.txt"
 
-	// Eğer komut yoksa hata ver
+func main() {
+
+	args := os.Args
 	if len(args) < 2 {
-		fmt.Println("Lütfen bir komut girin: add, list veya delete")
+		fmt.Println("Please enter a command: add, list or delete")
 		return
 	}
 
-	// Kullanıcının girdiği komutu al
 	command := args[1]
 
-	// Komutu kontrol et
 	switch command {
 	case "add":
 		if len(args) < 3 {
-			fmt.Println("Lütfen eklemek istediğiniz görevi girin!")
+			fmt.Println("Please add task!")
 			return
 		}
-		task := args[2]
-		fmt.Println("Yeni görev eklendi:", task)
+		addTask(args[2])
+
 	case "list":
-		fmt.Println("Tüm görevleri listele (bu kısmı geliştirebilirsin)")
+		listTasks()
+
 	case "delete":
 		if len(args) < 3 {
-			fmt.Println("Silmek istediğiniz görevin numarasını girin!")
+			fmt.Println("Enter the number of the task you want to delete!")
 			return
 		}
-		fmt.Println("Görev silindi:", args[2])
+		deleteTask(args[2])
+
 	default:
-		fmt.Println("Bilinmeyen komut:", command)
+		fmt.Println("Unknown command:", command)
 	}
+}
+
+// add task
+func addTask(task string) {
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(task + "\n")
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+
+	fmt.Println("New task added:", task)
+}
+
+// list task
+func listTasks() {
+	data, err := os.ReadFile(fileName)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	tasks := strings.Split(string(data), "\n")
+	fmt.Println("Task List:")
+	for i, task := range tasks {
+		if task != "" {
+			fmt.Printf("%d. %s\n", i+1, task)
+		}
+	}
+}
+
+// delete task
+func deleteTask(taskNumber string) {
+	// read file
+	data, err := os.ReadFile(fileName)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	tasks := strings.Split(string(data), "\n")
+
+	
+	index, err := strconv.Atoi(taskNumber)
+	if err != nil || index < 1 || index > len(tasks)-1 {
+		fmt.Println("Invalid task number!")
+		return
+	}
+
+	// delete from slice
+	tasks = append(tasks[:index-1], tasks[index:]...)
+
+	// updated data to .txt
+	err = os.WriteFile(fileName, []byte(strings.Join(tasks, "\n")), 0644)
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+
+	fmt.Println("Task deleted:", taskNumber)
 }
